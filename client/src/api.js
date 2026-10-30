@@ -162,6 +162,12 @@ export const sharesAPI = {
 
   info: (shareToken) =>
     apiRequest(`/shares/${shareToken}`),
+  downloadUrl: (shareToken, password) =>
+  `${API_URL}/shares/${shareToken}/download${
+    password
+      ? `?password=${encodeURIComponent(password)}`
+      : ''
+  }`,
 
   revoke: (token, id) =>
     apiRequest(`/shares/${id}`, {

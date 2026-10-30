@@ -419,57 +419,49 @@ function App() {
 
   // Download a public share.
   // This assumes the backend accepts the password as a query parameter.
-  async function downloadSharedFile(event) {
-    event.preventDefault();
-    setShareError('');
-    setShareDownloading(true);
+async function downloadSharedFile(event) {
+  event.preventDefault();
+  setShareError('');
+  setShareDownloading(true);
 
-    try {
-      const url = new URL(
-        `/api/shares/${encodeURIComponent(shareToken)}/download`,
-        'http://localhost:5000'
-      );
+  try {
+    const url = sharesAPI.downloadUrl(shareToken, sharePassword.trim());
+    const response = await fetch(url);
 
-      if (sharePassword.trim()) {
-        url.searchParams.set('password', sharePassword);
+    if (!response.ok) {
+      let message = 'Unable to download this shared file.';
+
+      try {
+        const data = await response.json();
+        message = data.message || message;
+      } catch {
+        // Response may not be JSON.
       }
 
-      const response = await fetch(url.toString());
-
-      if (!response.ok) {
-        let message = 'Unable to download this shared file.';
-
-        try {
-          const data = await response.json();
-          message = data.message || message;
-        } catch {
-          // Response may not be JSON.
-        }
-
-        throw new Error(message);
-      }
-
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-
-      link.href = objectUrl;
-      link.download =
-        sharedFile.file?.originalName ||
-        sharedFile.originalName ||
-        'shared-file';
-
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-    } catch (error) {
-      setShareError(error.message || 'Download failed.');
-    } finally {
-      setShareDownloading(false);
+      throw new Error(message);
     }
+
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = objectUrl;
+    link.download =
+      sharedFile.file?.originalName ||
+      sharedFile.originalName ||
+      'shared-file';
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+  } catch (error) {
+    setShareError(error.message || 'Download failed.');
+  } finally {
+    setShareDownloading(false);
   }
+}
 
   async function revokeShare(share) {
     if (!window.confirm('Revoke this share link?')) return;
